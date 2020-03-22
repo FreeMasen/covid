@@ -1,0 +1,8 @@
+[info]
+as_of = "2020-03-21T15:09:15-05:00"
+tested = 4090
+positive = 137
+
+[ratio]
+yesterday = 1.1913043
+prev_positive = 115
