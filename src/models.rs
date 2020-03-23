@@ -1,6 +1,5 @@
 use chrono::prelude::*;
 use serde::{Serialize, Deserialize};
-use std::path::PathBuf;
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -27,14 +26,11 @@ pub struct StateReport {
 impl StateReport {
     pub fn folder(&self) -> String {
         let dt = self.date_checked.naive_local();
-        format!("{:02}.{:02}.{:02}", dt.year(), dt.month(), dt.day())
+        format!("{:04}.{:02}.{:02}", dt.year(), dt.month(), dt.day())
     }
     pub fn file_name(&self) -> String {
         let dt: DateTime<Local> = self.date_checked.into();
         format!("{:02}:{:02}:{:02}.toml", dt.hour(), dt.minute(), dt.second())
-    }
-    pub fn extend_path(&self, root: &PathBuf) -> PathBuf {
-        root.join(self.folder()).join(self.file_name())
     }
     pub fn modified_local(&self) -> DateTime<Local> {
         self.date_checked.into()

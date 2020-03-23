@@ -12,8 +12,7 @@ fn main() -> Res<()> {
     let all_states = get_new_list()?;
     let now = get_mn(&all_states).expect("MN not on list");
     
-    let base = ensure_path()?;
-
+    let base = ensure_base_path()?;
     let yesterday = get_yesterday(&base.join(now.yesterday_folder()))?;
     let rep = Report::new(now.modified_local(),
         now.total.unwrap_or(0),
@@ -21,8 +20,12 @@ fn main() -> Res<()> {
         yesterday.map(|r| r.info.positive));
     let check_toml = to_string(&now)?;
     let report_toml = to_string(&rep)?;
-    std::fs::write(&now.extend_path(&base), check_toml).expect("failed to check write file");
-    std::fs::write(&base.join(now.folder()).join("report.toml"), report_toml).expect("failed to write daily report");
+    let today_dir = base.join(now.folder());
+    let now_path = today_dir.join(now.file_name());
+    std::fs::create_dir_all(&today_dir)?;
+    let report_dir = today_dir.join("report.toml");
+    std::fs::write(&now_path, check_toml).expect("failed to check write file");
+    std::fs::write(&report_dir, report_toml).expect("failed to write daily report");
     Ok(())
 }
 
@@ -53,13 +56,7 @@ fn get_yesterday(dir: &PathBuf) -> Res<Option<Report>> {
        
 }
 
-fn yesterdays_dir(base: &PathBuf) -> PathBuf {
-    let today = Local::today();
-    let yesterday = today - chrono::Duration::days(1);
-    PathBuf::from(&format!("{}.{:02}.{:02}", yesterday.year(), yesterday.month(), yesterday.day()))
-}
-
-fn ensure_path() -> Result<PathBuf, Box<dyn std::error::Error>> {
+fn ensure_base_path() -> Result<PathBuf, Box<dyn std::error::Error>> {
     let path = std::env::var("COVID_OUTPUT_DIR")
     .map(std::path::PathBuf::from)
     .unwrap_or_else(|_| {
