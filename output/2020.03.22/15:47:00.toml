@@ -1,0 +1,12 @@
+state = "MN"
+positive = 169
+grade = "A"
+score = 4
+negative = 4511
+hospitalized = 12
+death = 1
+total = 4680
+lastUpdateEt = "3/21 12:10"
+checkTimeEt = "3/22 16:47"
+dateModified = "2020-03-21T16:10:00Z"
+dateChecked = "2020-03-22T20:47:00Z"
