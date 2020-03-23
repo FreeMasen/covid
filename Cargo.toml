@@ -11,3 +11,5 @@ reqwest = { version = "0.10", features = ["rustls-tls", "json", "blocking"] }
 serde = { version = "1", features = ["derive"]}
 toml = "0.5"
 chrono = { version = "0.4", features = ["serde"] }
+lettre = "0.9"
+lettre_email = "0.9"

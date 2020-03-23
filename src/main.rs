@@ -24,8 +24,13 @@ fn main() -> Res<()> {
     let now_path = today_dir.join(now.file_name());
     std::fs::create_dir_all(&today_dir)?;
     let report_dir = today_dir.join("report.toml");
-    std::fs::write(&now_path, check_toml).expect("failed to check write file");
-    std::fs::write(&report_dir, report_toml).expect("failed to write daily report");
+    std::fs::write(&now_path, &check_toml).expect("failed to check write file");
+    std::fs::write(&report_dir, &report_toml).expect("failed to write daily report");
+    if let Ok(arg) = std::env::var("COVID_SEND_EMAIL") {
+        if arg != "" && arg != "0" {
+            mail(&report_toml, &check_toml)?;
+        }
+    }
     Ok(())
 }
 
@@ -105,4 +110,29 @@ struct Info {
 struct Ratio {
     yesterday: f32,
     prev_positive: u32,
+}
+#[cfg(target_os = "linux")]
+fn mail(report: &str, state: &str) -> Res<()> {
+    use lettre::{SendableEmail, EmailAddress, Transport, Envelope, SmtpClient};
+    use lettre::SmtpTransport;
+    let email = SendableEmail::new(
+        Envelope::new(
+            Some(EmailAddress::new("r@robertmasen.pizza".to_string())?),
+            vec![EmailAddress::new("r.f.masen@gmail.com".to_string())?]
+        )?,
+        Local::now().to_rfc2822(),
+        format!("{}\n\n{}", report, state).as_bytes().to_vec()
+    );
+    
+    // Open a local connection on port 25
+    let mut mailer = SmtpTransport::new(SmtpClient::new_unencrypted_localhost()?);
+    // Send the email
+    mailer.send(email)?;
+    Ok(())
+}
+
+#[cfg(not(target_os = "linux"))]
+fn mail(report: &str, state: &str) -> Res<()> {
+    eprintln!("not sending email\n{}\n{}", report, state);
+    Ok(())
 }
