@@ -1,6 +1,13 @@
 use chrono::prelude::*;
 use serde::{Serialize, Deserialize};
 
+#[derive(Debug, Clone)]
+pub struct GraphDot {
+    pub when: DateTime<Local>,
+    pub count: u32,
+    pub ratio: f32,
+}
+
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct StateReport {
