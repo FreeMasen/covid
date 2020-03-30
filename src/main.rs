@@ -38,7 +38,7 @@ fn main() -> Res<()> {
 
 fn update_long_report(base: &PathBuf, today_path: &PathBuf) -> Res<()> {
     let mut ret = Vec::new();
-    
+    let mut max = 0;
     for ent in read_dir(base)? {
         let ent = ent?;
         if ent.metadata()?.is_dir() {
@@ -49,20 +49,28 @@ fn update_long_report(base: &PathBuf, today_path: &PathBuf) -> Res<()> {
                 when: report.info.as_of,
                 count: report.info.positive,
                 ratio: report.ratio.map(|r| r.yesterday).unwrap_or(1.0),
-            })
+            });
+            if report.info.positive > max {
+                max = report.info.positive;
+            }
         }
     }
     ret.sort_by(|lhs, rhs| lhs.when.cmp(&rhs.when));
     let points: Vec<(f64, f64)> = ret.iter().enumerate().map(|(i, v)| (i as f64, v.count as f64)).collect();
-    println!("{:#?}", ret);
-    let page = flot::Page::new("");
-    let plot = page.plot("covid MN over time");
-    plot.lines("points", points);
-
     let x_axis: Vec<String> = ret.iter().map(|v| v.when.format("%D").to_string()).collect();
     let x: Vec<(f64, &str)> = x_axis.iter().enumerate().map(|(i, v)| (i as f64, v.as_str())).collect();
-    plot.xaxis()
-        .tick_values_and_labels(x.as_slice());
+    let log_y: Vec<f64> = {
+        let mut y = vec![1f64,10.0,100.0,1_000.0];
+        let mut upper = 1_000.0;
+        while max as f64 > upper {
+            upper *= 10.0;
+            y.push(upper);
+        }
+        y
+    };
+    let page = flot::Page::new("MN Covid Numbers");
+    setup_plot("MN Covid-19 Positive Tests", &page, &points, x.as_slice(), None);
+    setup_plot("MN Covid-19 Positive Tests Log Scale", &page, &points, x.as_slice(), Some(log_y.as_slice()));
     page.render("report.html")?;
     let dest = today_path.join("report.html");
     std::fs::copy("report.html", &dest)?;
@@ -71,6 +79,15 @@ fn update_long_report(base: &PathBuf, today_path: &PathBuf) -> Res<()> {
         std::fs::copy(&dest, &publish)?;
     }
     Ok(())
+}
+
+fn setup_plot(name: &str, page: &flot::Page, points: &[(f64, f64)], x: &[(f64, &str)], y: Option<&[f64]>) {
+    let plot = page.plot(name);
+    plot.lines("positive", points.to_vec());
+    plot.xaxis().tick_values_and_labels(x);
+    if let Some(y) = y {
+        plot.yaxis().tick_values(y);
+    }
 }
 
 fn get_mn(all_states: &[StateReport]) -> Option<StateReport> {
